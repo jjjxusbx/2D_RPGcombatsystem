@@ -1,3 +1,4 @@
+using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
@@ -18,7 +19,7 @@ public static class MonsterPatrolSetup
     public static void CreateDemoSetup()
     {
         GameObject navRoot = CreateNavMeshGround();
-        PatrolPathComponent path = CreatePatrolPath();
+        MonsterPatrolPath path = CreatePatrolPath();
         SetupSelectedMonsters(path);
         BakeNavMesh(navRoot);
         Selection.activeGameObject = navRoot;

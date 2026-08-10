@@ -26,9 +26,9 @@
   - [x] SubTask 5.2: Play Mode 手测清单已提供（巡逻往返、玩家进入追击、离开返回、受击暂停）
   - [x] SubTask 5.3: 边界检查：无路径点进入 Idle、目标不可达不卡死、NavMesh 未烘焙走 MoveDirect
 
-- [ ] Task 6: 交付与文档
-  - [ ] SubTask 6.1: 编写参数配置说明与烘焙步骤文档
-  - [ ] SubTask 6.2: 维护优化建议
+- [x] Task 6: 交付与文档
+  - [x] SubTask 6.1: 编写参数配置说明与烘焙步骤文档（docs/怪物巡逻系统使用与配置文档.md）
+  - [x] SubTask 6.2: 维护优化建议（文档第七节）
 
 # Task Dependencies
 - [Task 3] depends on [Task 2]（EnemyBase 需配合 MonsterPatrolController 的暂停/恢复）

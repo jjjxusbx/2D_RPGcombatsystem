@@ -1,0 +1,17 @@
+{
+  "case_name": "dwr-932-fw",
+  "case_id": "dwr-932-fw",
+  "goal": "DWR-932 固件逆向分析",
+  "scope": "local sandbox",
+  "created_utc": "2026-08-10T01:29:02.744784+00:00",
+  "directories": [
+    "artifacts",
+    "triage",
+    "reports",
+    "logs",
+    "notes",
+    "exports",
+    "tools",
+    "prompts"
+  ]
+}

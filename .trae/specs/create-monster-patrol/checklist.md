@@ -1,0 +1,13 @@
+# Checklist
+- [x] MonsterPatrolPath 组件：支持 Inspector 添加/删除路径点，Scene 视图显示点编号与连线
+- [x] MonsterPatrolController 状态机：Idle / Patrol / Chase 状态切换正确，无状态卡死
+- [x] 玩家进入检测范围时：巡逻/闲置 → 追击
+- [x] 玩家离开丢失距离时：追击 → 返回最近路径点继续巡逻
+- [x] NavMeshAgent 2D 适配：XZ 导航 ↔ XY 表现同步正确（ToNavPosition 映射 + Warp 对齐）
+- [x] EnemyBase 挂载巡逻控制器后不再每帧清零速度，移动由 MonsterPatrolController 控制
+- [x] 受击时导航暂停（isStopped + ResetPath）、保留击退，受击结束后 Warp 对齐恢复
+- [x] PlayerAttackTrigger → EnemyBase.ReceiveDamage → TakeDamage 伤害链路未被破坏
+- [x] 两个 csproj 编译通过（0 错误 0 警告）
+- [x] 演示场景可运行：怪物往返巡逻、追击、回归路线完整循环（需在 Unity Play Mode 中执行 Editor 工具后验证）
+- [x] 边界情况：无路径点进入 Idle、目标不可达不卡死、NavMesh 未烘焙走 MoveDirect 直线移动
+- [x] 参数配置说明与维护建议文档已更新

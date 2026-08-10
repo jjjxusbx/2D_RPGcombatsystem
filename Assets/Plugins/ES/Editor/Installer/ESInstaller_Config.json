@@ -1,0 +1,30 @@
+{
+    "profileName": "ES 0.37 安装",
+    "mainPackage": {
+        "packageId": "es_main",
+        "displayName": "ES Framework 主包",
+        "version": "0.37.0",
+        "description": "ES框架的核心包，包含所有基础功能和组件",
+        "isRequired": true,
+        "isInstalled": false,
+        "folderName": "Main",
+        "requiredMainPackages": [],
+        "installNotes": "这是ES框架的核心包，必须首先安装",
+        "packageFiles": [
+            "ESPackage0.35_.unitypackage"
+        ],
+        "tags": [
+            "Core",
+            "Framework",
+            "Essential"
+        ],
+        "author": "ES Framework Team",
+        "website": "https://esframework.com",
+        "license": "MIT",
+        "checkClass": "ES.ESResMaster"
+    },
+    "parentFolderPath": "Assets/Plugins/ES/Editor/Installer/Downloads",
+    "installationNotes": "",
+    "enableAutoCheck": true,
+    "skipNextAutoCheck": false
+}

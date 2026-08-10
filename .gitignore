@@ -1,0 +1,35 @@
+# Unity 生成目录（不提交）
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+
+# IDE / 系统
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+*.suo
+.vsconfig
+
+# 沙箱与本地日志
+fselocallog/
+FSEInject.log
+
+# Unity 崩溃与本地缓存
+sysinfo.txt
+*.pidb.meta
+*.pdb.meta
+
+# 大文件 / 外部资源包
+*.unitypackage
+
+# macOS
+.DS_Store
+
+# 本机生成文件
+*.local

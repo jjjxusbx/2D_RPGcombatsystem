@@ -12,4 +12,5 @@ public class Test4 : MonoBehaviour, IPointerEnterHandler
     {
         PointerEnter(eventData);
     }
+    //修改玩家的旋转
 }

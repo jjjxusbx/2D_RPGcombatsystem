@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D), typeof(Animator))]
 public class EnemyBase : MonoBehaviour
@@ -15,35 +17,58 @@ public class EnemyBase : MonoBehaviour
     public GameObject ATKTrigger1;
     public Transform ATKPos1;
 
-    [Header("=======================")]
+    [Header("战斗属性")]
+    [Min(1)] public int 最大血量 = 20;
+    public int 血量 = 20;
+    public Slider hpBar;
+    public Text hpText;
     public int ATK = 5;
     public bool canATK1 = true;
+    [SerializeField] private bool destroyOnDeath = true;
+    [SerializeField] private float destroyDelay = 0.2f;
+    public UnityEvent onDeath;
 
     public 基础移动 player;
     public bool playerInRang;
-    public bool IsGetHit => anim != null && anim.GetBool("IsGetHit");
+    public bool IsGetHit => !isDead && anim != null && anim.GetBool("IsGetHit");
     //private bool hasHitParameter;
+
+    private bool isDead;
+    private Collider2D enemyCollider;
 
     void Awake()
     {
         anim ??= GetComponent<Animator>();
         rb ??= GetComponent<Rigidbody2D>();
         sr ??= GetComponent<SpriteRenderer>();
+        enemyCollider = GetComponent<Collider2D>();
+        血量 = Mathf.Clamp(血量 <= 0 ? 最大血量 : 血量, 0, 最大血量);
+        RefreshHpView();
         //hasHitParameter = anim != null && System.Array.Exists(anim.parameters,
         //    parameter => parameter.type == AnimatorControllerParameterType.Bool && parameter.name == HitParameter);
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (isDead)
+        {
+            return;
+        }
+
         if (collision.CompareTag("Player"))
         {
             playerInRang = true;
-            player = collision.GetComponent<基础移动>();
+            player = collision.GetComponent<基础移动>() ?? collision.GetComponentInParent<基础移动>();
         }
     }
 
 
     void Update()
     {
+        if (isDead)
+        {
+            return;
+        }
+
         CreatATKTrigger1();
         // 移动控制已移交 MonsterPatrolController（NavMeshAgent）。
         // 未挂载巡逻控制器的怪物保持原行为：非受击时静止。
@@ -55,7 +80,15 @@ public class EnemyBase : MonoBehaviour
     //IsGetHit
     public void TakeDamage(float damage, Transform owner)
     {
+        if (isDead || damage <= 0f)
+        {
+            return;
+        }
+
         //Debug.Log($"[CombatHitDebug] TakeDamage enemy={name} damage={damage} owner={(owner != null ? owner.name : "null")}", this);
+        血量 = Mathf.Max(0, 血量 - Mathf.RoundToInt(damage));
+        RefreshHpView();
+
         CancelInvoke(nameof(GetHitAnimEnd));
         CancelInvoke(nameof(ResetHitFlash));
 
@@ -82,6 +115,12 @@ public class EnemyBase : MonoBehaviour
             }
 
             rb.linearVelocity = dir * knockbackSpeed;
+        }
+
+        if (血量 <= 0)
+        {
+            Die();
+            return;
         }
         
         Invoke(nameof(GetHitAnimEnd), knockbackDuration);
@@ -115,7 +154,7 @@ public class EnemyBase : MonoBehaviour
     // 若bug 则计算我们与玩家的位
     public void CreatATKTrigger1()
     {
-        if (!playerInRang || player == null)
+        if (isDead || !playerInRang || player == null)
         { 
             return;
         }
@@ -144,12 +183,84 @@ public class EnemyBase : MonoBehaviour
 
     public void ATK1End()
     {
-
+        if (!isDead)
+        {
+            canATK1 = true;
+        }
     }
     public void ReceiveDamage(float damage, Transform owner)
     {
+        if (isDead)
+        {
+            return;
+        }
+
         Debug.Log($"[CombatHitDebug] ReceiveDamage enemy={name} damage={damage} owner={(owner != null ? owner.name : "null")}", this);
         TakeDamage(damage, owner);
+    }
+
+    private void Die()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+        playerInRang = false;
+        canATK1 = false;
+        CancelInvoke();
+
+        if (anim != null)
+        {
+            anim.SetBool("IsGetHit", false);
+            anim.SetBool("IsRun", false);
+        }
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        if (enemyCollider != null)
+        {
+            enemyCollider.enabled = false;
+        }
+
+        MonsterPatrolController patrolController = GetComponent<MonsterPatrolController>();
+        if (patrolController != null)
+        {
+            patrolController.enabled = false;
+        }
+
+        Behaviour moveToTarget = GetComponent("MonsterMoveToTarget") as Behaviour;
+        if (moveToTarget != null)
+        {
+            moveToTarget.enabled = false;
+        }
+
+        onDeath?.Invoke();
+        Debug.Log($"[Combat] Enemy dead: {name}", this);
+
+        if (destroyOnDeath)
+        {
+            Destroy(gameObject, destroyDelay);
+        }
+    }
+
+    private void RefreshHpView()
+    {
+        if (hpBar != null)
+        {
+            hpBar.minValue = 0f;
+            hpBar.maxValue = 最大血量;
+            hpBar.value = 血量;
+        }
+
+        if (hpText != null)
+        {
+            hpText.text = $"{血量}/{最大血量}";
+        }
     }
 
     private Vector2 GetFacingDirection()

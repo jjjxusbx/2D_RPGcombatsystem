@@ -54,7 +54,7 @@ public class PlayerAttackTrigger : MonoBehaviour
         nextAttackTime = Time.time + attackCooldown;
         // 攻击前再瞄准一次，确保方向正确
         AimAtMouse();
-        #region 高级动画组件播放攻击，没有就用普通的Animator
+        #region 高级动画组件播放攻击,没有就用普通的Animator
         if (combatAnimation != null)
             combatAnimation.PlayAttack();
         else if (animationPresenter != null)
@@ -95,11 +95,11 @@ public class PlayerAttackTrigger : MonoBehaviour
 
     private IEnumerator AttackColliderRoutine()
     {
-        //砍出去，开启碰撞体（开始判定伤害
+        //砍出去，开启碰撞体开始判定伤害
         SetAttackColliderActive(true);
         // 等待一小段时间
         yield return new WaitForSeconds(attackActiveTime);
-        // 收招，关闭碰撞体（不再判定伤害）
+        // 收招，关闭碰撞体不再判定伤害
         SetAttackColliderActive(false);
         attackColliderRoutine = null;
     }

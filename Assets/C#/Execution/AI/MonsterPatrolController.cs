@@ -28,6 +28,7 @@ public class MonsterPatrolController : MonoBehaviour
     [SerializeField] private LayerMask playerMask;
 
     private Rigidbody2D body;
+    private PhysicsSystem2D physics;
     private NavMeshAgent agent;
     private Animator animator;
     private MonsterState state;
@@ -41,6 +42,7 @@ public class MonsterPatrolController : MonoBehaviour
     private void Awake()
     {
         body = GetComponent<Rigidbody2D>();
+        physics = GetComponent<PhysicsSystem2D>();
         agent = GetComponent<NavMeshAgent>();
         enemy ??= GetComponent<EnemyBase>();
         animator = GetComponent<Animator>();
@@ -119,7 +121,15 @@ public class MonsterPatrolController : MonoBehaviour
         {
             // 2D 适配：NavMesh 在 XZ 平面（Y=0），映射回 2D XY 平面
             Vector3 next = agent.nextPosition;
-            body.MovePosition(new Vector2(next.x, next.z));
+            Vector2 nextPosition = new Vector2(next.x, next.z);
+            if (physics != null)
+            {
+                physics.MovePosition(nextPosition);
+            }
+            else
+            {
+                body.MovePosition(nextPosition);
+            }
         }
 
         lastPosition = body.position;
@@ -217,7 +227,14 @@ public class MonsterPatrolController : MonoBehaviour
     private void MoveDirect(Vector3 destination, float speed)
     {
         Vector2 direction = ((Vector2)destination - body.position).normalized;
-        body.linearVelocity = direction * speed;
+        if (physics != null)
+        {
+            physics.Move(direction * speed);
+        }
+        else
+        {
+            body.linearVelocity = direction * speed;
+        }
     }
 
     private void PauseNavigation()
@@ -230,7 +247,14 @@ public class MonsterPatrolController : MonoBehaviour
 
         if (body != null && (enemy == null || !enemy.IsGetHit))
         {
-            body.linearVelocity = Vector2.zero;
+            if (physics != null)
+            {
+                physics.Stop();
+            }
+            else
+            {
+                body.linearVelocity = Vector2.zero;
+            }
         }
     }
 

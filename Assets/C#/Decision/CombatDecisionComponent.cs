@@ -13,6 +13,22 @@ public class CombatDecisionComponent : MonoBehaviour
     private float lastAttackTime;
     [SerializeField] private float attackComboWindow = 0.3f;
 
+    public void Configure(PlayerConfig config)
+    {
+        if (config == null)
+        {
+            return;
+        }
+
+        maxStamina = config.maxStamina;
+        staminaRegen = config.staminaRegen;
+        dodgeStaminaCost = config.dodgeStaminaCost;
+        attackStaminaCost = config.attackStaminaCost;
+        dodgeCooldown = config.dodgeCooldown;
+        attackComboWindow = config.attackComboWindow;
+        currentStamina = maxStamina;
+    }
+
     private void Start()
     {
         currentStamina = maxStamina;

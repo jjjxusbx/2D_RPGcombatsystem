@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public enum PlayerIntentType
 {
@@ -6,6 +6,7 @@ public enum PlayerIntentType
     Move,
     Attack,
     Dodge,
+    Skill,
     Aim
 }
 
@@ -17,6 +18,7 @@ public struct PlayerIntent
     public bool IsSprint;
     public bool AttackPressed;
     public bool DodgePressed;
+    public bool SkillPressed;
 }
 
 public interface IPlayerIntentProvider

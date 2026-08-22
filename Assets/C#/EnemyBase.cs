@@ -3,7 +3,7 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D), typeof(Animator))]
-public class EnemyBase : MonoBehaviour
+public class EnemyBase : Character
 {
     [Header("组件引用")]
     public Animator anim;
@@ -17,9 +17,8 @@ public class EnemyBase : MonoBehaviour
     public GameObject ATKTrigger1;
     public Transform ATKPos1;
 
-    [Header("战斗属性")]
+    [Header("战斗属性（初始最大血量，仅作场景配置；运行期血量由 ChaState 统一管理）")]
     [Min(1)] public int 最大血量 = 20;
-    public int 血量 = 20;
     public Slider hpBar;
     public Text hpText;
     public int ATK = 5;
@@ -35,14 +34,28 @@ public class EnemyBase : MonoBehaviour
 
     private bool isDead;
     private Collider2D enemyCollider;
+    private ChaState state;
 
-    void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         anim ??= GetComponent<Animator>();
         rb ??= GetComponent<Rigidbody2D>();
         sr ??= GetComponent<SpriteRenderer>();
         enemyCollider = GetComponent<Collider2D>();
-        血量 = Mathf.Clamp(血量 <= 0 ? 最大血量 : 血量, 0, 最大血量);
+
+        // 统一伤害管线：血量/受击/死亡由 ChaState 接管
+        state = GetComponent<ChaState>();
+        if (state == null)
+        {
+            state = gameObject.AddComponent<ChaState>();
+        }
+        state.maxHealth.SetBase(最大血量);
+        // 运行期当前血量由 ChaState 统一计算：初始为满血，上限为 maxHealth
+        state.currentHealth = state.maxHealth.GetValue();
+        state.onDamaged += OnStateDamaged;
+        state.onDeath += OnStateDeath;
+
         RefreshHpView();
         //hasHitParameter = anim != null && System.Array.Exists(anim.parameters,
         //    parameter => parameter.type == AnimatorControllerParameterType.Bool && parameter.name == HitParameter);
@@ -62,7 +75,7 @@ public class EnemyBase : MonoBehaviour
     }
 
 
-    void Update()
+    protected override void OnCharacterUpdate()
     {
         if (isDead)
         {
@@ -74,19 +87,33 @@ public class EnemyBase : MonoBehaviour
         // 未挂载巡逻控制器的怪物保持原行为：非受击时静止。
         if (GetComponent<MonsterPatrolController>() == null && anim != null && !anim.GetBool("IsGetHit"))
         {
-            rb.linearVelocity = Vector2.zero;
+            Physics?.Stop();
         }
     }
     //IsGetHit
     public void TakeDamage(float damage, Transform owner)
     {
-        if (isDead || damage <= 0f)
+        // 转发到统一伤害管线（防御减免→扣血→onDamaged/onDeath）
+        if (state != null)
+        {
+            state.TakeDamage(damage, owner);
+        }
+    }
+
+    private void OnStateDamaged(DamageInfo info)
+    {
+        if (info.actualDamage <= 0f)
         {
             return;
         }
 
-        //Debug.Log($"[CombatHitDebug] TakeDamage enemy={name} damage={damage} owner={(owner != null ? owner.name : "null")}", this);
-        血量 = Mathf.Max(0, 血量 - Mathf.RoundToInt(damage));
+        // DOT 小额伤害只刷新血条，跳过受击动画与击退
+        if (info.rawDamage <= 1f)
+        {
+            RefreshHpView();
+            return;
+        }
+
         RefreshHpView();
 
         CancelInvoke(nameof(GetHitAnimEnd));
@@ -105,8 +132,8 @@ public class EnemyBase : MonoBehaviour
         //远离玩家的方向
         if (rb != null)
         {
-            Vector2 dir = owner != null
-                ? ((Vector2)transform.position - (Vector2)owner.position).normalized
+            Vector2 dir = info.owner != null
+                ? ((Vector2)transform.position - (Vector2)info.owner.position).normalized
                 : -GetFacingDirection();
 
             if (dir.sqrMagnitude < 0.001f)
@@ -114,17 +141,20 @@ public class EnemyBase : MonoBehaviour
                 dir = Vector2.right;
             }
 
-            rb.linearVelocity = dir * knockbackSpeed;
+            if (Physics != null)
+            {
+                Physics.SetVelocity(dir * knockbackSpeed);
+            }
+            else
+            {
+                rb.linearVelocity = dir * knockbackSpeed;
+            }
         }
 
-        if (血量 <= 0)
+        if (!info.isLethal)
         {
-            Die();
-            return;
+            Invoke(nameof(GetHitAnimEnd), knockbackDuration);
         }
-        
-        Invoke(nameof(GetHitAnimEnd), knockbackDuration);
-        
     }
     public void GetHitAnimEnd()
     {
@@ -170,6 +200,12 @@ public class EnemyBase : MonoBehaviour
                 {
                     attackTrigger.SetDamage(ATK + Random.Range(0, 5), transform);
                 }
+
+                // 攻击动画：Slime 控制器通过 Attack trigger 从 Any State 切入
+                if (anim != null && anim.HasParameter("Attack"))
+                {
+                    anim.SetTrigger("Attack");
+                }
                 canATK1 = false;
                 Invoke(nameof(ATK1End), 0.4f);
             }
@@ -190,13 +226,12 @@ public class EnemyBase : MonoBehaviour
     }
     public void ReceiveDamage(float damage, Transform owner)
     {
-        if (isDead)
-        {
-            return;
-        }
-
-        Debug.Log($"[CombatHitDebug] ReceiveDamage enemy={name} damage={damage} owner={(owner != null ? owner.name : "null")}", this);
         TakeDamage(damage, owner);
+    }
+
+    private void OnStateDeath(DamageInfo info)
+    {
+        Die();
     }
 
     private void Die()
@@ -217,7 +252,11 @@ public class EnemyBase : MonoBehaviour
             anim.SetBool("IsRun", false);
         }
 
-        if (rb != null)
+        if (Physics != null)
+        {
+            Physics.Stop();
+        }
+        else if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
         }
@@ -250,16 +289,24 @@ public class EnemyBase : MonoBehaviour
 
     private void RefreshHpView()
     {
+        if (state == null)
+        {
+            return;
+        }
+
+        float current = state.currentHealth;
+        float max = state.maxHealth.GetValue();
+
         if (hpBar != null)
         {
             hpBar.minValue = 0f;
-            hpBar.maxValue = 最大血量;
-            hpBar.value = 血量;
+            hpBar.maxValue = max;
+            hpBar.value = current;
         }
 
         if (hpText != null)
         {
-            hpText.text = $"{血量}/{最大血量}";
+            hpText.text = $"{Mathf.RoundToInt(current)}/{Mathf.RoundToInt(max)}";
         }
     }
 

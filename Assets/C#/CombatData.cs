@@ -47,15 +47,6 @@ public class AttributeDefinition : ScriptableObject
     public AttributeValue defaultValue;
 }
 
-[Serializable]
-public class AttributeModifier
-{
-    public AttributeDefinition attribute;
-    public float flatBonus;
-    public float percentBonus;
-    public float finalBonus;
-}
-
 [CreateAssetMenu(menuName = "战斗/Buff")]
 public class BuffData : ScriptableObject
 {
@@ -65,6 +56,8 @@ public class BuffData : ScriptableObject
     public BuffStackRule stackRule = BuffStackRule.Replace;
     public string group;
     public string exclusiveGroup;
+    /// <summary>每秒伤害（DOT），0 = 无 DOT。由 BuffController.Update 每 1 秒 tick 一次走 host.TakeDamage。</summary>
+    public float damagePerSecond;
     public List<AttributeModifier> modifiers = new List<AttributeModifier>();
 }
 
@@ -96,7 +89,8 @@ public abstract class CMagicProperty
 [Serializable]
 public class DamageMagicProperty : CMagicProperty
 {
-    public float damage = 10f;
+    /// <summary>伤害倍率：最终伤害 = 施法者 Atk × damageMultiplier</summary>
+    public float damageMultiplier = 1f;
 
     public override void Apply(GameObject caster, GameObject target, int stacks)
     {
@@ -105,7 +99,27 @@ public class DamageMagicProperty : CMagicProperty
             return;
         }
 
-        target.SendMessage("ReceiveDamage", damage * Mathf.Max(1, stacks), SendMessageOptions.DontRequireReceiver);
+        // 从施法者 ChaState 读取 Atk，无 ChaState 时回退 10f
+        float atk = 10f;
+        if (caster != null)
+        {
+            ChaState casterState = caster.GetComponent<ChaState>();
+            if (casterState != null)
+            {
+                atk = casterState.GetStat("Atk");
+            }
+        }
+
+        float damage = atk * damageMultiplier;
+
+        ChaState targetState = target.GetComponent<ChaState>();
+        if (targetState == null)
+        {
+            Debug.LogWarning($"[Combat] DamageMagicProperty 目标 {target.name} 没有 ChaState，跳过伤害。");
+            return;
+        }
+
+        targetState.TakeDamage(damage, caster != null ? caster.transform : null);
     }
 }
 

@@ -109,6 +109,15 @@ public class PlayerAnimationPresenter : MonoBehaviour
         }
     }
 
+    /// <summary>装配自检：由 RuntimeDiagnostics 调用，缺失引用以显式问题输出，保证失败可观察。</summary>
+    public void ValidateBindings(System.Collections.Generic.List<string> issues)
+    {
+        if (playerAnimator == null) issues.Add("PlayerAnimationPresenter.playerAnimator 为空（角色动画不可播放）");
+        if (swordAnimator == null) issues.Add("PlayerAnimationPresenter.swordAnimator 为空（未找到 WeaponPivot/SwordPivot）");
+        if (slashAnimator == null) issues.Add("PlayerAnimationPresenter.slashAnimator 为空（未找到 WeaponPivot/SlashEffect）");
+        if (attackHitBox == null) issues.Add("PlayerAnimationPresenter.attackHitBox 为空（近战命中判定缺失）");
+    }
+
     /// <summary>统一处理角色与武器朝向翻转，供 PlayerCombatAnimation / 基础移动 共享调用</summary>
     public static void ApplyFacing(Vector2 aimDirection, SpriteRenderer playerRenderer, SpriteRenderer weaponRenderer, Transform weaponRoot)
     {
@@ -147,6 +156,20 @@ public class PlayerAnimationPresenter : MonoBehaviour
             {
                 animator.ResetTrigger(triggerName);
                 animator.SetTrigger(triggerName);
+                return;
+            }
+        }
+    }
+
+    /// <summary>安全设置 Animator Bool 参数（不存在时跳过），避免控制器缺参导致 SetBool 抛异常</summary>
+    public static void SetBoolIfExists(Animator animator, string boolName, bool value)
+    {
+        if (animator == null || string.IsNullOrEmpty(boolName)) return;
+        foreach (AnimatorControllerParameter param in animator.parameters)
+        {
+            if (param.name == boolName && param.type == AnimatorControllerParameterType.Bool)
+            {
+                animator.SetBool(boolName, value);
                 return;
             }
         }

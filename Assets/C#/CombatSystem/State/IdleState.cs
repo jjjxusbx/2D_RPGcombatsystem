@@ -17,11 +17,15 @@ public class IdleState : ICombatState
             return;
         }
 
-        PlayerIntent intent = ctx.InputReader.GetIntent();
+        PlayerIntent intent = ctx.Intent;
         if (intent.AttackPressed && ctx.Decision.CanAttack())
         {
             ctx.Decision.ConsumeAttackStamina();
             ctx.StateMachine.ChangeState(new AttackState());
+        }
+        else if (intent.SkillPressed)
+        {
+            ctx.StateMachine.ChangeState(new CastBuffState());
         }
         else if (intent.DodgePressed && ctx.Decision.CanDodge())
         {

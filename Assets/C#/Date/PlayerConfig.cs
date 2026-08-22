@@ -9,7 +9,10 @@ public class PlayerConfig : ScriptableObject
 
     [Header("Combat")]
     public float attackComboWindow = 0.3f;
+    public float attackDuration = 0.4f;
+    [Min(1)] public int maxCombo = 3;
     public float dodgeInvincibleTime = 0.2f;
+    public float dodgeDuration = 0.25f;
     public float dodgeDistance = 3f;
     public float dodgeCooldown = 0.5f;
 

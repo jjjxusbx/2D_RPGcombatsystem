@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class CursorImage : MonoBehaviour
 {
-    [SerializeField]
+    //[SerializeField]
     public Image cursorImage;
 
     void Awake()

@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class PlayerCombatAnimation : MonoBehaviour
+public class PlayerCombatAnimation : AbilityBase
 {
     [Header("==组件引用==")]
     [SerializeField] private Animator playerAnimator;
@@ -27,16 +27,22 @@ public class PlayerCombatAnimation : MonoBehaviour
     [SerializeField] private float attackRangeActiveTime = 0.18f;
 
 
-    private void Awake()
+    protected override void OnInitialize()
     {
         BindMissingReferences();
-        //SetAttackRangeActive(false);
+        SetAttackRangeActive(false);
     }
+
+    protected override void OnActivate()
+    {
+        PlayAttackInternal();
+    }
+
     // 调用外部接口
     public void SetMove(Vector2 moveInput)
     {
-        if (playerAnimator != null)
-            playerAnimator.SetBool(runParameter, moveInput.sqrMagnitude > 0.001f);
+        PlayerAnimationPresenter.SetBoolIfExists(playerAnimator, runParameter,
+            moveInput.sqrMagnitude > 0.001f);
     }
     public void AimAt(Vector2 worldPosition)
     {
@@ -51,21 +57,30 @@ public class PlayerCombatAnimation : MonoBehaviour
     }
     public void PlayAttack()
     {
-        //AimAtTarget();
+        if (!IsInitialized)
+        {
+            Initialize(GetComponentInParent<Character>());
+        }
 
-        // 如果有锁定目标，优先朝向目标
+        if (IsActive)
+        {
+            PlayAttackInternal();
+            return;
+        }
+
+        Activate();
+        Deactivate();
+    }
+
+    private void PlayAttackInternal()
+    {
         if (target != null)
             AimAt(target.position);
 
-        // 播放各层攻击动画
-        if (playerAnimator != null)
-            PlayerAnimationPresenter.SetTriggerIfExists(playerAnimator, playerAttackTrigger);
-        if (swordAnimator != null)
-            PlayerAnimationPresenter.SetTriggerIfExists(swordAnimator, swordAttackTrigger);
-        if (slashAnimator != null)
-            PlayerAnimationPresenter.SetTriggerIfExists(slashAnimator, slashAttackTrigger);
-
-        //RestartAttackRange();
+        PlayerAnimationPresenter.SetTriggerIfExists(playerAnimator, playerAttackTrigger);
+        PlayerAnimationPresenter.SetTriggerIfExists(swordAnimator, swordAttackTrigger);
+        PlayerAnimationPresenter.SetTriggerIfExists(slashAnimator, slashAttackTrigger);
+        RestartAttackRange();
     }
     public void SetTarget(Transform newTarget)
     {

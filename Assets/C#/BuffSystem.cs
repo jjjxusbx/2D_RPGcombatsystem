@@ -6,12 +6,15 @@ public sealed class BuffInstance
     public BuffData data;
     public float remaining;
     public int stacks;
+    public ChaState host; // 受影响的角色属性容器，用于施加/回收修饰器
+    public float dotAccumulator; // DOT 计时累计器，每满 1s 触发一次 TakeDamage
 
     public BuffInstance(BuffData data)
     {
         this.data = data;
         remaining = data.duration;
         stacks = 1;
+        dotAccumulator = 0f;
     }
 }
 
@@ -26,9 +29,27 @@ public class BuffController : MonoBehaviour
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
             BuffInstance instance = activeBuffs[i];
+
+            // DOT 每满 1 秒 tick 一次，走 host.TakeDamage（小额伤害，表现层会过滤受击动画）
+            if (instance.data.damagePerSecond > 0f && instance.host != null && instance.host.IsAlive)
+            {
+                instance.dotAccumulator += Time.deltaTime;
+                while (instance.dotAccumulator >= 1f)
+                {
+                    instance.dotAccumulator -= 1f;
+                    instance.host.TakeDamage(instance.data.damagePerSecond);
+                }
+            }
+
             instance.remaining -= Time.deltaTime;
             if (instance.remaining <= 0f)
             {
+                // 到期：回收该 Buff 施加到属性上的全部修饰器
+                if (instance.host != null)
+                {
+                    instance.host.RemoveModifiersFromSource(instance.data.buffId);
+                }
+
                 activeBuffs.RemoveAt(i);
             }
         }
@@ -45,9 +66,15 @@ public class BuffController : MonoBehaviour
         BuffInstance existing = Find(data.buffId);
         if (existing == null)
         {
-            activeBuffs.Add(new BuffInstance(data));
+            BuffInstance instance = new BuffInstance(data);
+            instance.host = GetComponent<ChaState>();
+            activeBuffs.Add(instance);
+            ApplyModifiers(instance);
             return;
         }
+
+        // 重复施加：先回收旧效果再重放，避免同一 buffId 的修饰器重复叠加
+        existing.host?.RemoveModifiersFromSource(data.buffId);
 
         switch (data.stackRule)
         {
@@ -65,6 +92,8 @@ public class BuffController : MonoBehaviour
             case BuffStackRule.Ignore:
                 break;
         }
+
+        ApplyModifiers(existing);
     }
 
     public bool Has(string buffId)
@@ -85,6 +114,19 @@ public class BuffController : MonoBehaviour
         return null;
     }
 
+    // 将 BuffData.modifiers 逐条施加到角色的 ChaState 属性上，来源记为 buffId
+    private void ApplyModifiers(BuffInstance instance)
+    {
+        if (instance.host == null || instance.data.modifiers == null) return;
+
+        foreach (AttributeModifier mod in instance.data.modifiers)
+        {
+            if (mod == null || string.IsNullOrEmpty(mod.statId)) continue;
+            mod.source = instance.data.buffId;
+            instance.host.ApplyModifier(mod);
+        }
+    }
+
     private void RemoveExclusiveBuffs(BuffData incoming)
     {
         if (string.IsNullOrEmpty(incoming.exclusiveGroup))
@@ -94,9 +136,12 @@ public class BuffController : MonoBehaviour
 
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
-            if (activeBuffs[i].data.exclusiveGroup == incoming.exclusiveGroup &&
-                activeBuffs[i].data.buffId != incoming.buffId)
+            BuffInstance removed = activeBuffs[i];
+            if (removed.data.exclusiveGroup == incoming.exclusiveGroup &&
+                removed.data.buffId != incoming.buffId)
             {
+                // 与到期/重放路径一致：先回收该 Buff 施加的属性修饰器，再移除实例，避免属性加成残留
+                removed.host?.RemoveModifiersFromSource(removed.data.buffId);
                 activeBuffs.RemoveAt(i);
             }
         }

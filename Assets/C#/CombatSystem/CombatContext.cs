@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class CombatContext
 {
@@ -11,6 +11,7 @@ public class CombatContext
     public Transform WeaponRoot;
     public Collider2D AttackHitBox;
 
+    public PlayerIntent Intent;
     public Vector2 MoveInput;
     public Vector2 AimDirection = Vector2.right;
     public bool IsAttacking;
@@ -26,4 +27,13 @@ public class CombatContext
     public PlayerInputReader InputReader;
     public CombatDecisionComponent Decision;
     public CombatStateMachine StateMachine;
+    public SkillExecutor SkillExecutor;
+    public Character Character;
+
+    public float AttackDuration = 0.4f;
+    public float InputBufferWindow = 0.3f;
+    public int MaxCombo = 3;
+    public float DodgeDuration = 0.25f;
+    public float InvincibleDuration = 0.2f;
+    public float DodgeDistance = 3f;
 }

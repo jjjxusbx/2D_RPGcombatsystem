@@ -25,7 +25,7 @@ public class CameraFollow2D : MonoBehaviour
 
         if (target == null)
         {
-            // Debug.LogError("CameraFollow2D ����: δָ�� Target������ Inspector ����н����������ק�� Target ��λ��");
+            
             return;
         }
 

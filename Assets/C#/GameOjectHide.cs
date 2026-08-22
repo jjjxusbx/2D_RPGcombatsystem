@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class GameoOjectHide : MonoBehaviour
+public class GameOjectHide : MonoBehaviour
 {
     public Tilemap map;
     // colider 

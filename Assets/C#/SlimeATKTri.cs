@@ -17,10 +17,18 @@ public class SlimeATKTri : MonoBehaviour
             return;
         }
 
+        Character character = collision.GetComponent<Character>() ?? collision.GetComponentInParent<Character>();
+        ChaState state = character != null ? character.GetComponent<ChaState>() : null;
+        if (state != null)
+        {
+            state.TakeDamage(damage, owner != null ? owner : transform);
+            return;
+        }
+
         基础移动 player = collision.GetComponent<基础移动>() ?? collision.GetComponentInParent<基础移动>();
         if (player == null)
         {
-            Debug.LogWarning($"[Combat] Slime attack hit Player tag but no 基础移动 component: {collision.name}", collision);
+            Debug.LogWarning($"[Combat] Slime attack hit Player tag but no Character/基础移动 component: {collision.name}", collision);
             return;
         }
 

@@ -62,7 +62,7 @@ namespace Roguelike.Run
             ChaState player = GetPlayerState();
             player?.RemoveModifiersFromSource(_sessionSource);
 
-            RunDiag.Log($"[Diagnostics] 局会话结束：isWin={isWin} 结算晶核 +{reward}（累计 {current + reward}），强化已清理。");
+            RunDiag.Log($"[Diagnostics] 局会话结束:isWin={isWin} 结算晶核 +{reward}（累计 {current + reward}），强化已清理。");
         }
 
         /// <summary>碎片收入统一点。</summary>

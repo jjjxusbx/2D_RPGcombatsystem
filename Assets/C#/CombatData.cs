@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -50,15 +50,21 @@ public class AttributeDefinition : ScriptableObject
 [CreateAssetMenu(menuName = "战斗/Buff")]
 public class BuffData : ScriptableObject
 {
+    /// <summary>Buff 唯一标识；同时作为施加到 ChaState 属性上的 modifier.source，用于到期定向回收。</summary>
     public string buffId;
+    /// <summary>总时长（秒）。0 表示瞬时生效（下一帧到期）。</summary>
     public float duration = 1f;
     [Min(1)] public int maxStacks = 1;
     public BuffStackRule stackRule = BuffStackRule.Replace;
     public string group;
+    /// <summary>互斥组：同组且不同 buffId 的 Buff 只保留最新一个。</summary>
     public string exclusiveGroup;
-    /// <summary>每秒伤害（DOT），0 = 无 DOT。由 BuffController.Update 每 1 秒 tick 一次走 host.TakeDamage。</summary>
-    public float damagePerSecond;
-    public List<AttributeModifier> modifiers = new List<AttributeModifier>();
+    /// <summary>
+    /// Buff 行为组件（ECS 组合）：基础为 BuffStatComponent（属性修饰器）/BuffDotComponent（持续伤害），
+    /// 若同时是光环追加 BuffAuraComponent，若同时是范围效果追加 BuffAoeComponent。
+    /// 组件按实体克隆，多宿主互不共享运行时状态。
+    /// </summary>
+    [SerializeReference] public List<BuffComponent> components = new List<BuffComponent>();
 }
 
 [Serializable]
@@ -169,3 +175,4 @@ public class SkillData : ScriptableObject
     public List<RangeProperty> ranges = new List<RangeProperty>();
     public MagicEffectData magicEffect;
 }
+

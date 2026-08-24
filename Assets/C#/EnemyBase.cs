@@ -175,10 +175,6 @@ public class EnemyBase : Character
     
     //private void OnTriggerExit2D(Collider2D collision)
     //{
-    //    if (collision.CompareTag("Player"))
-    //    {
-    //        playerInRang = false;
-    //    }
     //}
 
     // 若bug 则计算我们与玩家的位

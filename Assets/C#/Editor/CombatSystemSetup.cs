@@ -1,4 +1,5 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,13 +25,16 @@ public static class CombatSystemSetup
         BuffData buffPoison = CreateOrReplaceAsset<BuffData>(ConfigDir + "/Buff_中毒.asset", "Buff_中毒");
         buffPoison.buffId = "poison_01";
         buffPoison.duration = 5f;
-        buffPoison.damagePerSecond = 4f;
+        buffPoison.components.Add(new BuffDotComponent { damagePerSecond = 4f });
 
         // 狂暴 Buff：duration 10s，Atk +50%
         BuffData buffRage = CreateOrReplaceAsset<BuffData>(ConfigDir + "/Buff_狂暴.asset", "Buff_狂暴");
         buffRage.buffId = "rage_01";
         buffRage.duration = 10f;
-        buffRage.modifiers.Add(new AttributeModifier("Atk", ModifierType.PercentAdd, 0.5f));
+        buffRage.components.Add(new BuffStatComponent
+        {
+            modifiers = new List<AttributeModifier> { new AttributeModifier("Atk", ModifierType.PercentAdd, 0.5f) }
+        });
 
         // 普攻 MagicEffect：伤害 × 1 + 施加中毒
         MagicEffectData meleeEffect = CreateOrReplaceAsset<MagicEffectData>(ConfigDir + "/MagicEffect_普攻.asset", "MagicEffect_普攻");

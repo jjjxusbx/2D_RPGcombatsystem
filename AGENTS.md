@@ -27,6 +27,7 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
 - AI Navigation `2.0.14`（怪物巡逻 NavMesh）
 - Unity Input System `1.14.0` 已安装；游戏脚本仍以旧 `Input` 为主，`PlayerInputReader` 键位已配置化（SerializeField）
 - Unity Test Framework `1.5.1`、Visual Scripting `1.9.6`
+- Unity Entities `1.4.8`（DOTS，已安装；当前仅被 `Game.ECS.Buff` 程序集引用，未接入主线战斗）
 - 编译项目：`Assembly-CSharp.csproj`、`Assembly-CSharp.Player.csproj`、`Assembly-CSharp-Editor.csproj`
 
 # Directory Structure
@@ -37,6 +38,7 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
   - `PhysicsSystem2D.cs`：物理适配层（Move/Stop/SetVelocity，2D↔NavMesh XZ 坐标映射）。
   - `Attribute.cs` / `CombatSystem/ChaState.cs`：属性容器与统一伤害管线。
   - `CombatSystem/`：`CombatContext`、`ICombatState`、`State/{Idle,Move,Attack,Dodge,CastBuff}`。
+  - `CombatSystem/ECS/`：`Game.ECS.Buff` 程序集（BuffECSComponents/Queries/Config/Systems/Authoring/Runtime；`autoReferenced:false`，不纳入默认三 csproj，未接入主线）。
   - `Execution/`：`CombatStateMachine`、`SkillExecutor`、`HitDetection/HitBoxController`、`AI/MonsterPatrol{Controller,Path}`、`AI/MonsterMoveToTarget`。
   - `Decision/`：`PlayerInputReader`、`CombatDecisionComponent`、`IPlayerIntent`。
   - `Presentation/`：`PlayerAnimationPresenter`。
@@ -44,8 +46,9 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
   - `Date/`：`PlayerConfig`。
   - `UI/`、`UiShowcase/`：UI 与展示页模块。
   - `TurnBased/`：独立的网格回合制原型（Contracts/Data/Decision/Entities/Execution/Presentation + Bootstrap/Diagnostics/DemoDriver）。
-  - `Editor/`：`CombatSystemSetup`、`CompositionSetup`、`TurnBasedSetup`、`UiShowcaseSetup`、`MonsterPatrolSetup` 一键装配/烘焙工具。
+  - `Editor/`：`CombatSystemSetup`、`CompositionSetup`、`TurnBasedSetup`、`UiShowcaseSetup`、`MonsterPatrolSetup`、`RogueSetup` 一键装配/烘焙工具。
   - `RunManager.cs`、`RunCurrencyStore.cs`（命名空间 `Roguelike.Run`）：v0.1.5 局会话与局外货币。
+  - `Roguelike/`（`Roguelike.Flow`/`Roguelike.Reward`/`Roguelike.UI`）：v0.1.5 局会话元循环与表现——`RogueRoomFlowController`、`FragmentDrop`、`FragmentSpawner`、`AltarChoiceUI`、`SettlementUI`。
   - `CombatData.cs`、`BuffSystem.cs`（含 `BuffController`）、`AbilityBase.cs`、`CharacterAttackAbility.cs`、`InventoryManager.cs`、`跳跃射箭.cs`、`Sword.cs`、`WeaponPivot.cs`、`PlayerAttackTrigger.cs`、`SlimeATKTri.cs` 等。
 - `Assets/Scenes`：`SampleScene.unity`、`UiShowcase.unity`、`Test.unity`。
 - `Assets/动画/{英雄,大剑,敌人}`：Hero / Sword / Slash / Slime_sheet 控制器与动画片段。
@@ -86,7 +89,9 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
 | 属性系统 | 可用 | 是 | `Attribute`（五段式 + 脏缓存）+ `ChaState`（8 属性 + `modifier` 定向） |
 | 统一伤害管线 | 可用 | 是 | `ChaState.TakeDamage` → 减免 → 扣血 → `onDamaged`/`onDeath`；玩家/敌人共用 |
 | 怪物巡逻 | 可用 | 条件可用 | `MonsterPatrolController` + `MonsterPatrolPath`（NavMeshAgent）；依赖 AI Navigation `2.0.14`，需烘焙环境 |
-| 局会话（Rogue） | 原型 | 条件可用 | `RunManager`/`RunCurrencyStore`（无状态、原子写、版本化）；结算/房间流待场景联调 |
+| 局会话（Rogue） | 原型 | 条件可用 | `RunManager`/`RunCurrencyStore` + `Roguelike/`{房间流,碎片掉落,祭坛,结算}；代码已落地，未接场景、未 Play Mode 验证 |
+| ECS Buff（DOTS） | 原型/试验 | 否 | `CombatSystem/ECS/` `Game.ECS.Buff`（autoReferenced:false，不参与默认三 csproj）；Entities 1.4.8 已装；未接入主线战斗 |
+| 移动演示（Playable） | 规划中/未实现 | 否 | `.trae/specs/arog-playable-movement-controller/` 规格三件套存在；无运行代码/场景；按 `.trae/rules/movement-fsm-playable.md` 不作为可用能力 |
 | 回合制网格原型 | 原型 | 否 | `TurnBased/` 完整但独立于主线；无主场景接入 |
 | UI 框架 | 基础可用 | 条件可用 | UGUI `2.0.0`、Canvas、EventSystem；`UiShowcase` 展示页模块存在；无统一 UI 管理器 |
 | 能力系统 | 可用 | 是 | `AbilityBase` + `CharacterAttackAbility`，`Character` 统一注册/加载 |
@@ -101,7 +106,7 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
 # 可复用边界
 
 - 可复用：`PlayerAnimationPresenter` 动画表现接口、`PlayerAnimationPresenter.SetBoolIfExists/SetTriggerIfExists`（参数存在性防御）、`PhysicsSystem2D` 物理适配、`ChaState` 属性/伤害管线、`Character`/`AbilityBase` 生命周期、`SafeAreaFitter`、`RunCurrencyStore` 无状态持久化、UGUI 基础组件。
-- 暂不可复用：`CombatStateMachine` 作为稳定 FSM（需先迁输入并补测试）、`InventoryManager` 作为持久化背包、`BuffController` 作为完整 Buff 系统（需补事件/回滚）、`AIBehaviorTree` 作为生产 AI 框架。
+- 暂不可复用：`CombatStateMachine` 作为稳定 FSM（需先迁输入并补测试）、`InventoryManager` 作为持久化背包、`BuffController` 作为完整 Buff 系统（需补事件/回滚）、`AIBehaviorTree` 作为生产 AI 框架、`Game.ECS.Buff`（autoReferenced:false、未接入主线，待明确验收标准后再评估）。
 - 不新增对象池和任务系统，直到出现明确生成/回收或任务流程验收标准。
 - 新功能必须先确认现有模块的场景引用、生命周期、错误边界和最小验证，再决定复用、修复或重写。
 
@@ -111,6 +116,8 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
 - `PlayerInputReader` 仍用旧 `Input` API，与 `activeInputHandler` 双模式存在重复触发风险（见版本计划 v0.2）。
 - `EnemyBase`/`MonsterPatrolController` 存在每帧 `GetComponent` / `Physics2D.OverlapCircle`，性能待优化。
 - `UiShowcase.unity`、`Test.unity` 未纳入 git（`SampleScene.unity` 已跟踪）；部分编辑器装配仍依赖人工执行菜单工具后进入 Play Mode 验证。
+- 新增 `Roguelike/` 模块（房间流/掉落/祭坛/结算）代码未接场景、未 Play Mode 验证；需在 Unity 内执行 `RogueSetup` 装配工具后联调。
+- `CombatSystem/ECS/`（`Game.ECS.Buff`）依赖 Unity Entities 1.4.8，属未接入主线的独立程序集；若评估接入主线需先补齐编译与验收。
 
 # 对抗式审查协议
 
@@ -145,6 +152,88 @@ Unity 6 2D 横版侧视动作 RPG 原型《灰烬矿脉》。当前覆盖：玩�
 - 功能开发可走 Spec 驱动（`.trae/specs/` 下建目录：spec.md 需求、tasks.md 任务、checklist.md 验收清单），完成后再落地。
 - 提交信息遵循 `.trae/rules/git-commit-message.md`（`alwaysApply:false`，`scene:git_message`）。
 - 版本结束须填写"上线复盘模板"（见版本计划文末），未复盘不得进入下一版。
+
+# 工作方式（进项目先理解什么）
+
+进入本项目时，按以下顺序建立上下文，而非凭文件名推断：
+
+1. 先读本文件：确认技术栈、目录结构、能力盘点、可复用边界与已知问题，理解"这项目能做什么、不能做什么"。
+2. 理解分层与组合根：业务沿 数据 → 决策 → 执行 → 表现 分层，最终由唯一组合根（`PlayerCombatBootstrap`）装配；新增代码应落入对应层，而不是绕开组合根自建入口。
+3. 用"能力盘点 + 可复用边界"校准期望：`有文件 ≠ 可用能力`。盘点表标记为"原型/不存在/条件可用"的，一律按原型处理，不当作稳定框架复用。
+4. 确定当前里程碑：先读 `docs/版本计划.md`，明确当前版本目标与验收清单，再决定改动是否属于本版范围。
+5. 对目标模块找到最小验证路径：从场景启动追到实际调用，确认生命周期（创建→启用→更新→禁用→销毁），并跑对应 Play Mode 清单，而非仅编译通过。
+6. 涉及架构/管理器变更前，先按"对抗式审查协议"输出 事实/风险/结论/验证，再动手。
+
+# 决策顺序（先过入口，再定路线与工具）
+
+任何新任务在决定技术路线与选用工具之前，必须先经过项目入口，按固定顺序决策，**禁止跳过入口直接选工具或写代码**：
+
+1. **新任务**：明确要解决的问题/需求，并对照 `docs/版本计划.md` 判断是否属于本版本范围。
+2. **先过 AGENTS.md 入口**：核对技术栈、分层、能力盘点、可复用边界、已知风险、禁止路线；确认"项目内有无现成模块、能否复用、是否应走 Spec 驱动"。
+3. **选择技术路线**：基于入口信息选出路线——复用(修复) / 重写 / 新增数据或子类 / 走 Spec 流程；若涉及架构或管理器变更，先按"对抗式审查协议"输出事实/风险/结论/验证。
+4. **选择工具**：路线确定后，再选定工具（Unity 编辑器 / dotnet build / 读写与搜索工具）；工具服务于已定路线，而非反过来驱动路线。
+
+**要点**：
+
+- 工具不先于路线，路线不先于入口。
+- 一切路线判断以入口的"能力盘点 + 真实调用链"为准：`有文件 ≠ 可用能力`。
+- 若入口信息不足，先补读目标模块文档 / `.trae/specs/`，再回到路线判断；不要凭臆断选工具或直接上手写码。
+
+# 规则进入流程与交付前自动检验
+
+**规则进入流程（规则先于执行）**：
+
+- **AGENTS.md（`alwaysApply`，进场即注入）**：定义身份、边界、分层、路径、验证方式，是执行的最高入口标准。
+- **`.trae/rules/*.md` 次级协作规则**：`alwaysApply:true` 常驻（如移动模块开发约定），`alwaysApply:false + scene` 仅场景触发（如 `git-commit-message.md` 在 `git_message` 场景注入）。
+- 进场顺序：入口规则（AGENTS）→ 场景规则（rules）→ 目标模块文档 / spec（`.trae/specs/`）→ 再开始执行。规则未读到前不先动手。
+
+**检验与报告从入口开始（而非收尾补做）**：
+
+- 进入任务时即按入口标准明确验收项：编译状态、对应场景 Play Mode 行为、资产/生命周期完整性、非法流转可观察。
+- 交付时按该清单逐项核对并回传证据；报告沿用对抗式审查四段：**事实 / 风险 / 结论 / 验证**。
+
+**自动检验（先检查再交付）**：
+
+- 交付前必须自动跑检查，**通过后方可交付；未通过不交付**。
+- **编译状态（不带 compiler error）**：全量构建三个 csproj——`Assembly-CSharp`、`Assembly-CSharp.Player`、`Assembly-CSharp-Editor`（Editor 改动时必跑），**0 错误且 0 警告**方为编译通过；存在任何 compiler error/warning 即视为不可交付。
+- **行为验证**：编译通过 ≠ 行为通过；须再跑对应场景 Play Mode 清单（状态切换、输入响应、地形兼容、动画融合等）。
+- 检查失败：先修复，再重跑并复核，**不得绕过检查直接交付**。
+
+# 优先工具（以 Unity 为主）
+
+- **以 Unity 编辑器为第一工具**：场景、预制体、Animator/Playable、资产导入、包管理、编辑器一键装配、Play Mode 行为验证，全部以 Unity 实际运行为准。
+- **`dotnet build` 仅作编译回归**：依次跑 `Assembly-CSharp`、`Assembly-CSharp.Player`、`Assembly-CSharp-Editor`（Editor 改动时），以"0 警告 / 0 错误 + DLL 生成"判定；它不能替代 Unity 导入与行为验证。
+- **编译与 Unity 行为冲突时**：以 Unity（编辑/运行/导入）实际结果为准，并回传两者差异的证据；不得只凭编译通过就宣布完成。
+- **读代码/搜索优先用专门工具**：读用 IDE/Read，精确查找用 Glob/Grep，语义检索用 SearchCodebase；避免在终端用 `find`/`grep`/`cat`/`sed` 等替代。
+- **不绕过 Unity 手改未序列化资产**：除非确有必要并已核实序列化数据，否则不要盲写场景、预制体、Animator 控制器、动画片段；新增 Unity 资产/脚本必须补 `.meta`。
+
+# 长期要求与规范（限制 / 边界 / 禁止路线）
+
+**限制（长期有效）**：
+
+- 非需勿改生成/本地文件：`Library`、`Temp`、`obj`、`Logs`、`.vs`、`UserSettings`。
+- 不新增网络调用、凭证存储、分析埋点、遥测或外部服务集成（项目为本地 Unity 原型，无后端/鉴权/Web3）。
+- 持久化仅允许无状态、版本化、原子写入（参照 `RunCurrencyStore`）。
+- 保持改动小且绑定到请求行为；避免反复多轮的过度发明。
+
+**边界（新增能力的落点，优先加数据/子类而非重写核心）**：
+
+- 属性/血量 → `Attribute` / `ChaState`。
+- Buff/强化 → `AttributeModifier` 与 Buff 规则。
+- 技能 → Skill/MagicEffect 数据行（主配置 + Projectile/Range 子数据）。
+- 怪物 → `MonsterPatrolController` 参数 + AI 函数注册。
+- 投射物 → launch/trajectory 正交扩展。
+- 能力 → `AbilityBase` 生命周期。
+
+**禁止路线（避免破坏现有架构的一致性）**：
+
+- 双写 `rb.linearVelocity`（多入口争用刚体）。
+- 引入第二个输入入口、第二个状态入口或第二份业务规则。
+- 全局单例、公开可变静态状态、隐藏副作用、不可回收资源（如未销毁的 PlayableGraph/协程）。
+- 未请求的抽象、对象池、任务系统（直到有明确生成/回收或任务流程验收标准）。
+- 盲目覆盖场景、预制体、动画控制器或生成资产；把"有文件"误判为"可用能力"。
+- 无公开契约与最小行为验证就将原型写成稳定框架。
+- 未完成上线复盘就进入下一版本。
 
 # Development Commands
 

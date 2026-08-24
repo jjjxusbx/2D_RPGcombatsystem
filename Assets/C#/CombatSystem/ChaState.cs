@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,7 +22,7 @@ public class DamageInfo
 /// <summary>
 /// 角色属性容器：所有数值属性都走 Attribute（基础值 + 修饰器）。
 /// Buff/升级通过 AttributeModifier 动态增减，到期后按 source 定向移除，不直接改字段。
-/// statId 约定见 Awake 注册表，BuffData.modifiers 里用相同 id 定向施加。
+/// statId 约定见 Awake 注册表，BuffData.components 里的 BuffStatComponent.modifiers 用相同 id 定向施加。
 /// 统一伤害管线：所有伤害经 TakeDamage → 防御减免 → 扣血 → onDamaged/onDeath 事件，
 /// 表现层（玩家/敌人）订阅事件做击退/动画/销毁，本类不负责销毁对象。
 /// </summary>
